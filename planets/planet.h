@@ -3,10 +3,13 @@
 
 enum Color {
 	BLACK,
-	BLUE = 0x000000ff,
-	RED = 0x00ff0000,
-	YELLOW = 0x0000ffff
+	BLUE,
+	RED,
+	YELLOW,
+	NUMCOLORS
 };
+
+extern float colors[NUMCOLORS][3];
 
 class Planet {
 public:
