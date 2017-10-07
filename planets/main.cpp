@@ -6,10 +6,12 @@
 #include <SDL2/SDL.h> 
 #include <SDL2/SDL_opengles2.h> 
 #include <fstream> 
-#include <stdlib.h> 
+#include <stdlib.h>
+#include <cmath>
 #include "vector.h" 
 #include "point.h" 
 #include "planet.h"
+#include "camera.h"
 using namespace std;
 
 #define WINDOW_HEIGHT 1000
@@ -142,13 +144,14 @@ int main()
 
 	GLint upos = glGetUniformLocation(program, "pos");
         GLint ucolor = glGetUniformLocation(program, "color");
-	GLint uscale = glGetUniformLocation(program, "scale");
+	GLint uradius = glGetUniformLocation(program, "radius");
+	GLint ucamera = glGetUniformLocation(program, "camera");
 	GLint udimensions = glGetUniformLocation(program, "dimensions");
 
 	vector<Planet> planetlist = {
-		Planet {"Earth", {0,-0.4}, {0.00075,-0.0015}, 0.0000001, 0.1, BLUE},
+		Planet {"Earth", {0,-0.4}, {0.00075,0.0015}, 0.000001, 0.01, BLUE},
 		//Planet {"Sun", {0,0}, {500,500}, 1000, 20, YELLOW},
-		Planet {"Mars", {0.0,0.4}, {-0.00075,0.0015}, 0.0000001, 0.1, RED}
+		Planet {"Mars", {0.0,0.4}, {-0.00075,-0.0015}, 0.000001, 0.01, RED}
 		};
 	vector<Vector> forcearray(planetlist.size(),{0,0});
 
@@ -159,6 +162,10 @@ int main()
 	glUniform2f(udimensions, win_width, win_height);
 	glViewport(0, 0, win_width, win_height);
 
+	Camera cam = {1,1,Point(0.2,0.2),0};
+
+	float camatrix[9] = {1/cam.width,0,-cam.position[0]/cam.width,0,1/cam.height,-cam.position[1]/cam.height,0,0,1};
+	glUniformMatrix3fv(ucamera, 1, 1, camatrix);
 	bool quit = false;
  	while (!quit) {
 		quit = handleevents();
@@ -194,7 +201,7 @@ int main()
 			Color color = planetlist[i].getcolor();
 			long double rr = planetlist[i].getradius();
 			glUniform2f(upos,rp[0],rp[1]);
-			glUniform1f(uscale,rr);
+			glUniform1f(uradius,rr);
 			glUniform3f(ucolor,colors[color][0],colors[color][1],colors[color][2]);
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		}

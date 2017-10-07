@@ -1,14 +1,17 @@
 attribute vec4 quad;
 uniform vec2 pos;
-uniform float scale;
+uniform float radius;
 uniform vec2 dimensions;
+uniform mat3 camera;
 void main() {
 	float asp = dimensions.x/dimensions.y;
+	vec3 pxyz;
 	if (asp < 1.0) {
-		gl_Position = vec4 ((pos.x+scale*quad.x),(pos.y+scale*quad.y)*asp,0,1);
+		pxyz = camera*vec3 ((pos.x+radius*quad.x),(pos.y+radius*quad.y)*asp,1);
 	} else {
-		gl_Position = vec4 ((pos.x+scale*quad.x)/asp,(pos.y+scale*quad.y),0,1);
+		pxyz = camera*vec3 ((pos.x+radius*quad.x)/asp,(pos.y+radius*quad.y),1);
 	}
+	gl_Position = vec4(pxyz.xy, 0, 1);
 	//gl_Position = vec4(pos.x+scale*quad.x,(pos.y+scale*quad.y),0,1);
 	//gl_PointSize = scale;
 }
