@@ -15,9 +15,9 @@
 using namespace std;
 
 #define WINDOW_HEIGHT 1000
-#define WINDOW_WIDTH 500
+#define WINDOW_WIDTH 1000
 
-bool handleevents() {
+bool handleevents(Camera *cam) {
 	bool quit = false;
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
@@ -30,8 +30,27 @@ bool handleevents() {
 			case SDLK_ESCAPE:
 				quit = true;
 				break;
-			}
-			break;
+			case SDLK_w:
+				cam->translate(0,0.1);
+				break;
+			case SDLK_s:
+                                cam->translate(0,-0.1);
+                                break;
+			case SDLK_a:
+                                cam->translate(-0.1,0);
+                                break;
+                        case SDLK_d:
+                                cam->translate(0.1,0);
+                                break;
+			case SDLK_r:
+				cam->rotate(0.1);
+				break;
+			case SDLK_t:
+                                cam->rotate(-0.1);
+				break;
+                        }
+
+                        break;
 		}
 	}
 	return quit;
@@ -69,7 +88,7 @@ int init(SDL_Window **window, SDL_GLContext *glcontext, GLuint *program) {
                 cerr << SDL_GetError() << '\n';
                 return -1;
         }
-        *window = SDL_CreateWindow("", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN);
+        *window = SDL_CreateWindow("", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_OPENGL);// | SDL_WINDOW_FULLSCREEN);
         if (*window == NULL)
         {
                 cerr << SDL_GetError() << '\n';
@@ -133,6 +152,29 @@ int init(SDL_Window **window, SDL_GLContext *glcontext, GLuint *program) {
 
 }
 
+void mm3x3(float *A, float *B, float *C) {
+	C[0] = A[0]*B[0]+A[1]*B[3]+A[2]*B[6];
+	C[1] = A[0]*B[1]+A[1]*B[4]+A[2]*B[7];
+	C[2] = A[0]*B[2]+A[1]*B[5]+A[3]*B[8];
+	C[3] = A[3]*B[0]+A[4]*B[3]+A[5]*B[6];
+	C[4] = A[3]*B[1]+A[4]*B[4]+A[5]*B[7];
+	C[5] = A[3]*B[2]+A[4]*B[5]+A[5]*B[8];
+	C[6] = A[6]*B[0]+A[7]*B[3]+A[8]*B[6];
+	C[7] = A[6]*B[1]+A[7]*B[4]+A[8]*B[7];
+	C[8] = A[6]*B[2]+A[7]*B[5]+A[8]*B[8];
+}
+void camatrixupdate(float *cm,Camera *cam) {
+	auto ca = cam->orientation;
+	auto x = cam->position[0];
+	auto y = cam->position[1];
+	cm[0] = cos(ca)/cam->width;
+	cm[1] = -sin(ca)/cam->height;
+	cm[2] = -x;
+	cm[3] = sin(ca)/cam->width;
+	cm[4] = cos(ca)/cam->height;
+	cm[5] = -y;
+}
+
 int main()
 {
 	SDL_Window *window = NULL;
@@ -149,9 +191,9 @@ int main()
 	GLint udimensions = glGetUniformLocation(program, "dimensions");
 
 	vector<Planet> planetlist = {
-		Planet {"Earth", {0,-0.4}, {0.00075,0.0015}, 0.000001, 0.01, BLUE},
-		//Planet {"Sun", {0,0}, {500,500}, 1000, 20, YELLOW},
-		Planet {"Mars", {0.0,0.4}, {-0.00075,-0.0015}, 0.000001, 0.01, RED}
+		Planet {"Earth", {0,-0.4}, {0.00075,0.00015}, 0.0000001, 0.1, BLUE},
+		//Planet {"Sun", {0,0}, {0.001,0.0}, 0.0000001, 0.1, YELLOW},
+		Planet {"Mars", {0.0,0.4}, {-0.000075,-0.00015}, 0.0000001, 0.1, RED}
 		};
 	vector<Vector> forcearray(planetlist.size(),{0,0});
 
@@ -162,13 +204,16 @@ int main()
 	glUniform2f(udimensions, win_width, win_height);
 	glViewport(0, 0, win_width, win_height);
 
-	Camera cam = {1,1,Point(0.2,0.2),0};
+	Camera cam = {1,1,Point(0.0,0.0),0};
 
-	float camatrix[9] = {1/cam.width,0,-cam.position[0]/cam.width,0,1/cam.height,-cam.position[1]/cam.height,0,0,1};
+	float camatrix[9] = {1,0,0,0,1,0,0,0,1};
+	camatrixupdate(camatrix,&cam);
+	//float camatrix[9] = {1/cam.width,0,-cam.position[0]/cam.width,0,1/cam.height,-cam.position[1]/cam.height,0,0,1};
 	glUniformMatrix3fv(ucamera, 1, 1, camatrix);
 	bool quit = false;
  	while (!quit) {
-		quit = handleevents();
+
+		quit = handleevents(&cam);
 		for (int i = 0; i < planetlist.size(); i++) {
 			//cout << x.getname();
 			forcearray[i] = {0,0};
@@ -183,7 +228,8 @@ int main()
 			planetlist[i].velocity() = planetlist[i].getvelocity() + F/planetlist[i].getmass();
 			planetlist[i].position() = planetlist[i].getposition() + planetlist[i].getvelocity();
 		}
-
+		camatrixupdate(camatrix,&cam);
+		glUniformMatrix3fv(ucamera, 1, 1, camatrix);
 		//SDL_FillRect(surface, NULL, BLACK);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glEnableVertexAttribArray(0);

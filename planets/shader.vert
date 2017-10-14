@@ -12,6 +12,4 @@ void main() {
 		pxyz = camera*vec3 ((pos.x+radius*quad.x)/asp,(pos.y+radius*quad.y),1);
 	}
 	gl_Position = vec4(pxyz.xy, 0, 1);
-	//gl_Position = vec4(pos.x+scale*quad.x,(pos.y+scale*quad.y),0,1);
-	//gl_PointSize = scale;
 }
