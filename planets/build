@@ -1,1 +1,1 @@
-c++ -std=c++11 main.cpp planet.cpp point.cpp -lSDL2 -lGL
+c++ -std=c++11 main.cpp planet.cpp point.cpp -lSDL2 -lGL -g

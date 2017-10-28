@@ -1,3 +1,4 @@
+
 #include <iostream> 
 #include <string> 
 #include <array> 
@@ -31,16 +32,16 @@ bool handleevents(Camera *cam) {
 				quit = true;
 				break;
 			case SDLK_w:
-				cam->translate(0,0.1);
+				cam->translate(0,0.1,0);
 				break;
 			case SDLK_s:
-                                cam->translate(0,-0.1);
+                                cam->translate(0,-0.1,0);
                                 break;
 			case SDLK_a:
-                                cam->translate(-0.1,0);
+                                cam->translate(-0.1,0,0);
                                 break;
                         case SDLK_d:
-                                cam->translate(0.1,0);
+                                cam->translate(0.1,0,0);
                                 break;
 			case SDLK_r:
 				cam->rotate(0.1);
@@ -110,15 +111,26 @@ int init(SDL_Window **window, SDL_GLContext *glcontext, GLuint *program) {
 	GLuint vbo;
 	glGenBuffers(1, &vbo);
 
-	float vertices[] = {-1,1,
-			    1,1,
- 			     -1,-1,
-			     1,-1};
+	float vertices[] = {1.0, 1.0, 1.0, 1.0,
+			    -1.0,  -1.0, 1.0, 1.0,
+ 			   -1.0,   1.0, -1.0, 1.0,
+			    1.0,  -1.0,-1.0, 1.0,
+			    1.0,   1.0, 1.0, 1.0,
+			   -1.0,  -1.0, 1.0, 1.0,
+
+			    1.0, 0.0, 0.0, 1.0,
+			    0.0, 1.0, 0.0, 1.0,
+			    0.0, 0.0, 1.0, 1.0,
+			    1.0, 1.0, 0.0, 1.0,
+			    1.0, 0.0, 0.0, 1.0,
+			    0.0, 1.0, 0.0, 1.0};
 	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (const void*) (24*sizeof( float)));
 
 	auto vshader = compileShader(GL_VERTEX_SHADER, "shader.vert");
 	auto fshader = compileShader(GL_FRAGMENT_SHADER, "shader.frag");
@@ -127,6 +139,7 @@ int init(SDL_Window **window, SDL_GLContext *glcontext, GLuint *program) {
 	glAttachShader(*program, vshader);
         glAttachShader(*program, fshader);
 	glBindAttribLocation(*program, 0, "quad");
+	glBindAttribLocation(*program, 1, "col");
         glLinkProgram(*program);
         glDetachShader(*program, vshader);
         glDetachShader(*program, fshader);
@@ -155,7 +168,7 @@ int init(SDL_Window **window, SDL_GLContext *glcontext, GLuint *program) {
 void mm3x3(float *A, float *B, float *C) {
 	C[0] = A[0]*B[0]+A[1]*B[3]+A[2]*B[6];
 	C[1] = A[0]*B[1]+A[1]*B[4]+A[2]*B[7];
-	C[2] = A[0]*B[2]+A[1]*B[5]+A[3]*B[8];
+	C[2] = A[0]*B[2]+A[1]*B[5]+A[2]*B[8];
 	C[3] = A[3]*B[0]+A[4]*B[3]+A[5]*B[6];
 	C[4] = A[3]*B[1]+A[4]*B[4]+A[5]*B[7];
 	C[5] = A[3]*B[2]+A[4]*B[5]+A[5]*B[8];
@@ -164,15 +177,28 @@ void mm3x3(float *A, float *B, float *C) {
 	C[8] = A[6]*B[2]+A[7]*B[5]+A[8]*B[8];
 }
 void camatrixupdate(float *cm,Camera *cam) {
-	auto ca = cam->orientation;
-	auto x = cam->position[0];
-	auto y = cam->position[1];
-	cm[0] = cos(ca)/cam->width;
-	cm[1] = -sin(ca)/cam->height;
-	cm[2] = -x;
-	cm[3] = sin(ca)/cam->width;
-	cm[4] = cos(ca)/cam->height;
-	cm[5] = -y;
+	auto c = cos(cam->orientation.magnitude()*3.141592654*2);
+        auto s = sin(cam->orientation.magnitude()*3.141592654*2);
+        auto oc = 1-c;
+        auto w = cam->width;
+	auto h = cam->height;
+	Vector v = cam->orientation;
+	v.normalize();
+
+	cm[0] = (c+v[0]*v[0]*oc)/w; cm[1] = (v[0]*v[1]*oc-v[0]*s)/w; cm[2] = (v[0]*v[2]*oc+v[1]*s)/w; cm[3] = -cam->position[0];
+        cm[4] = (v[0]*v[1]*oc+v[0]*s)/h; cm[5] = (c+v[1]*v[1]*oc)/h; cm[6] = (v[1]*v[2]*oc-v[0]*s)/h; cm[7] = -cam->position[1];
+        cm[8] = (v[0]*v[2]*oc-v[1]*s); cm[9] = (v[0]*v[1]*oc+v[0]*s); cm[10] = (c+v[2]*v[2]*oc); cm[11]= -cam->position[2];
+}
+void planetmatrixupdate(Planet *planet, float *matrix) {
+	auto c = cos(planet->ori.magnitude()*3.141592654*2);
+	auto s = sin(planet->ori.magnitude()*3.141592654*2);
+	auto oc = 1-c;
+	auto r = planet->radius;
+	Vector v = planet->ori;
+	v.normalize();
+	matrix[0] = (c+v[0]*v[0]*oc)*r; matrix[1] = (v[0]*v[1]*oc-v[0]*s)*r; matrix[2] = (v[0]*v[2]*oc+v[1]*s)*r; matrix[3] = planet->pos[0];
+	matrix[4] = (v[0]*v[1]*oc+v[0]*s)*r; matrix[5] = (c+v[1]*v[1]*oc)*r; matrix[6] = (v[1]*v[2]*oc-v[0]*s)*r; matrix[7] = planet->pos[1];
+	matrix[8] = (v[0]*v[2]*oc-v[1]*s)*r; matrix[9] = (v[0]*v[1]*oc+v[0]*s)*r; matrix[10] = (c+v[2]*v[2]*oc)*r; matrix[11]= planet->pos[2];
 }
 
 int main()
@@ -183,19 +209,23 @@ int main()
 	if (init(&window, &glcontext, &program)) {
 		exit(-1);
 	}
-
+	long double theta = 0.0005;
 	GLint upos = glGetUniformLocation(program, "pos");
         GLint ucolor = glGetUniformLocation(program, "color");
 	GLint uradius = glGetUniformLocation(program, "radius");
 	GLint ucamera = glGetUniformLocation(program, "camera");
 	GLint udimensions = glGetUniformLocation(program, "dimensions");
+	GLint um2w = glGetUniformLocation(program, "m2w");
 
 	vector<Planet> planetlist = {
-		Planet {"Earth", {0,-0.4}, {0.00075,0.00015}, 0.0000001, 0.1, BLUE},
+		Planet {"Earth", {0.0,0.0,0.0}, {0.00075,0.00015,0.0}, {0,0,1}, 0.0000001, 0.5, BLUE},
 		//Planet {"Sun", {0,0}, {0.001,0.0}, 0.0000001, 0.1, YELLOW},
-		Planet {"Mars", {0.0,0.4}, {-0.000075,-0.00015}, 0.0000001, 0.1, RED}
+		Planet {"Mars", {0.0,0.4,0.0}, {-0.00075,-0.00015,0.0}, {0,1,0}, 0.0000001, 0.1, RED}
 		};
-	vector<Vector> forcearray(planetlist.size(),{0,0});
+	vector<Vector> forcearray(planetlist.size(),{0,0,0});
+	float matrixarray[3][16] = {	{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1},
+					{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1},
+					{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1}};
 
 	int win_width = 0;
 	int win_height = 0;
@@ -204,12 +234,11 @@ int main()
 	glUniform2f(udimensions, win_width, win_height);
 	glViewport(0, 0, win_width, win_height);
 
-	Camera cam = {1,1,Point(0.0,0.0),0};
+	Camera cam = {win_width/(float) win_height,1,Point(0.0,0.0,0.0),Vector(0.0,0.0,1.0)};
 
-	float camatrix[9] = {1,0,0,0,1,0,0,0,1};
+	float camatrix[16] = {1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
 	camatrixupdate(camatrix,&cam);
-	//float camatrix[9] = {1/cam.width,0,-cam.position[0]/cam.width,0,1/cam.height,-cam.position[1]/cam.height,0,0,1};
-	glUniformMatrix3fv(ucamera, 1, 1, camatrix);
+	glUniformMatrix4fv(ucamera, 1, 1, camatrix);
 	bool quit = false;
  	while (!quit) {
 
@@ -228,13 +257,21 @@ int main()
 			planetlist[i].velocity() = planetlist[i].getvelocity() + F/planetlist[i].getmass();
 			planetlist[i].position() = planetlist[i].getposition() + planetlist[i].getvelocity();
 		}
+		for (int i = 0; i <planetlist.size(); i++) {
+			auto ori = planetlist[i].ori;
+			auto s = (theta+ori.magnitude())/ori.magnitude();
+			planetlist[i].ori = ori*s;
+			planetmatrixupdate(&planetlist[i],  matrixarray[i]);
+		}
+
 		camatrixupdate(camatrix,&cam);
-		glUniformMatrix3fv(ucamera, 1, 1, camatrix);
+		glUniformMatrix4fv(ucamera, 1, 1, camatrix);
 		//SDL_FillRect(surface, NULL, BLACK);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
 		//glDisableVertexAttribArray(0);
-		glVertexAttrib2f(0, 0.0, 0.0);
+		//glVertexAttrib2f(0, 0.0, 0.0);
 		for (int i = 0; i < planetlist.size(); i++) {
 			auto p = planetlist[i];
 /*
@@ -243,13 +280,15 @@ int main()
 			cout << p.getposition()[1] << '\n';
 			cout << p.getvelocity()[0] << ' ' << p.getvelocity()[1] << '\n';
 
-*/			Point rp = planetlist[i].getposition();
+*/
+			
+
+			Point rp = planetlist[i].getposition();
 			Color color = planetlist[i].getcolor();
 			long double rr = planetlist[i].getradius();
-			glUniform2f(upos,rp[0],rp[1]);
-			glUniform1f(uradius,rr);
+			glUniformMatrix4fv(um2w,1,1,matrixarray[i]);
 			glUniform3f(ucolor,colors[color][0],colors[color][1],colors[color][2]);
-			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 6);
 		}
 
 		SDL_GL_SwapWindow(window);

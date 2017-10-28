@@ -16,6 +16,7 @@ public:
 	std::string name;
 	Point pos;
 	Vector vel;
+	Vector ori;
 	long double mass;
 	long double radius;
 	Color color;
@@ -26,6 +27,7 @@ public:
 
 	const Point &getposition() {return this->pos;}
 	const Vector getvelocity() {return this->vel;}
+	const Vector getorientation() {return this->ori;}
 	long double getmass() {return this->mass;}
 	std::string getname() {return this->name;}
 	Color getcolor() {return this->color;}
