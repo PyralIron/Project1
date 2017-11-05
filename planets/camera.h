@@ -18,8 +18,18 @@ public:
 		this->position[1] = y;
 		this->position[2] = z;
 	}
-	void rotate(long double angle) {
+	void rpitch(long double angle) {
 		/* hack!!! */ this->orientation[0] = std::fmod(this->orientation[0]+angle,2*3.1415926536);
+	}
+	void ryaw() {
+		auto ori = this->orientation;
+		//auto theta = ori.magnitude()*2*3.1415926536;
+	}
+	void rroll(long double angle) {
+		auto ori = this->orientation;
+       		auto s = (angle+ori.magnitude())/ori.magnitude();
+        	this->orientation = ori*s;
+
 	}
 };
 
