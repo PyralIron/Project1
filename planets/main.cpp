@@ -58,6 +58,15 @@ bool handleevents(Camera *cam) {
 			case SDLK_f:
 				cam->ryaw(0.01);
 				break;
+			case SDLK_g:
+                                cam->ryaw(-0.01);
+                                break;
+			case SDLK_c:
+                                cam->rpitch(0.01);
+                                break;
+			case SDLK_v:
+                                cam->rpitch(-0.01);
+                                break;
                         }
 
                         break;
@@ -133,7 +142,20 @@ int init(SDL_Window **window, SDL_GLContext *glcontext, GLuint *program) {
 			    0.0, 0.0, 1.0, 1.0,
 			    1.0, 1.0, 0.0, 1.0,
 			    1.0, 0.0, 0.0, 1.0,
-			    0.0, 1.0, 0.0, 1.0};
+			    0.0, 1.0, 0.0, 1.0,
+		       -6.0, 0.0, 0.0, 1.0,
+		        6.0, 0.0, 0.0, 1.0,
+		        0.0,-6.0, 0.0, 1.0,
+                        0.0, 6.0, 0.0, 1.0,
+		        0.0, 0.0,-6.0, 1.0,
+                        0.0, 0.0, 6.0, 1.0,
+
+                        1.0, 1.0, 1.0, 1.0,
+                        1.0, 0.0, 0.0, 1.0,
+		        1.0, 1.0, 1.0, 1.0,
+                        0.0, 1.0, 0.0, 1.0,
+                        1.0, 1.0, 1.0, 1.0,
+                        0.0, 0.0, 1.0, 1.0};
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 
@@ -187,70 +209,30 @@ void mm3x3(float *A, float *B, float *C) {
 	C[8] = A[6]*B[2]+A[7]*B[5]+A[8]*B[8];
 }
 void camatrixupdate(float *cm,Camera *cam) {
-<<<<<<< HEAD
 	Vector axes[3] = {cam->roll, cam->yaw, cam->pitch};
-	auto c = cos(cam->roll.magnitude()*3.141592654*2);
-        auto s = sin(cam->roll.magnitude()*3.141592654*2);
-        auto oc = 1-c;
-=======
-	long double c;
-        long double s;
-        long double oc;
->>>>>>> 9c2b169e25c8ca74cacc84f421e667f130f533dc
+	auto c1 = cos(axes[0].magnitude()*3.141592654*2);
+	auto c2 = cos(axes[1].magnitude()*3.141592654*2);
+	auto c3 = cos(axes[2].magnitude()*3.141592654*2);
+        auto s1 = sin(axes[0].magnitude()*3.141592654*2);
+	auto s2 = sin(axes[1].magnitude()*3.141592654*2);
+	auto s3 = sin(axes[2].magnitude()*3.141592654*2);
         auto w = cam->width;
 	auto h = cam->height;
 	auto x = cam->position[0];
 	auto y = cam->position[1];
 	auto z = cam->position[2];
-<<<<<<< HEAD
 	Vector v = cam->roll;
 	v.normalize();
 
-	cm[0] = (c+v[0]*v[0]*oc)/w; cm[1] = (v[0]*v[1]*oc-v[2]*s)/w; cm[2] = (v[0]*v[2]*oc+v[1]*s)/w; cm[3] = cm[0]*x+cm[1]*y+cm[2]*z;
-        cm[4] = (v[0]*v[1]*oc+v[2]*s)/h; cm[5] = (c+v[1]*v[1]*oc)/h; cm[6] = (v[1]*v[2]*oc-v[0]*s)/h; cm[7] = cm[4]*x+cm[5]*y+cm[6]*z;
-        cm[8] = (v[0]*v[2]*oc-v[1]*s); cm[9] = (v[2]*v[1]*oc+v[0]*s); cm[10] = (c+v[2]*v[2]*oc); cm[11]= cm[8]*x+cm[9]*y+cm[10]*z;
+	cm[0] = c1*c2/w; cm[1] = (c1*s2*s3-c3*s1)/w; cm[2] = (s1*s3+c1*c3*s2)/w; cm[3] = cm[0]*x+cm[1]*y+cm[2]*z;
+        cm[4] = (c2*s1)/h; cm[5] = (c1*c3+s1*s2*s3)/h; cm[6] = (c3*s1*s2-c1*s3)/h; cm[7] = cm[4]*x+cm[5]*y+cm[6]*z;
+        cm[8] = (-s2); cm[9] = (c2*s3); cm[10] = (c2*c3); cm[11] = cm[8]*x+cm[9]*y+cm[10]*z;
 	for (int i = 0; i < 3; i++) {
 		cam->roll[i] = axes[0][0]*cm[i]+axes[0][1]*cm[i+4]+axes[0][2]*cm[i+8];
 		cam->yaw[i] = axes[1][0]*cm[i]+axes[1][1]*cm[i+4]+axes[1][2]*cm[i+8];
 		cam->pitch[i] = axes[2][0]*cm[i]+axes[2][1]*cm[i+4]+axes[2][2]*cm[i+8];
 	}
-=======
-	Vector v;
-	Vector axes[3] = {cam->roll,cam->yaw,cam->pitch};
-
-	//for (int i = 0; i < 3; i++) {
-		v = axes[0];
-		//cout << v.magnitude();
-		s = sin(v.magnitude()*3.141592654*2);
-		c = cos(v.magnitude()*3.141592654*2);
-		v.normalize();
-		oc = 1-c;
-		//cout << cm[0];
-		cm[0] = (c+v[0]*v[0]*oc)/w; cm[1] = (v[0]*v[1]*oc-v[2]*s)/w; cm[2] = (v[0]*v[2]*oc+v[1]*s)/w; cm[3] = cm[0]*x+cm[1]*y+cm[2]*z;
-        	cm[4] = (v[0]*v[1]*oc+v[2]*s)/h; cm[5] = (c+v[1]*v[1]*oc)/h; cm[6] = (v[1]*v[2]*oc-v[0]*s)/h; cm[7] = cm[4]*x+cm[5]*y+cm[6]*z;
-        	cm[8] = (v[0]*v[2]*oc-v[1]*s); cm[9] = (v[2]*v[1]*oc+v[0]*s); cm[10] = (c+v[2]*v[2]*oc); cm[11]= cm[8]*x+cm[9]*y+cm[10]*z;
-		v = axes[1];
-                //cout << v.magnitude();
-                /*s = sin(v.magnitude()*3.141592654*2);
-                c = cos(v.magnitude()*3.141592654*2);
-                v.normalize();
-                oc = 1-c;
-                //cout << cm[0];
-                cm[0] = (c+v[0]*v[0]*oc)/w; cm[1] = (v[0]*v[1]*oc-v[2]*s)/w; cm[2] = (v[0]*v[2]*oc+v[1]*s)/w; cm[3] = cm[0]*x+cm[1]*y+cm[2]*z;
-                cm[4] = (v[0]*v[1]*oc+v[2]*s)/h; cm[5] = (c+v[1]*v[1]*oc)/h; cm[6] = (v[1]*v[2]*oc-v[0]*s)/h; cm[7] = cm[4]*x+cm[5]*y+cm[6]*z;
-                cm[8] = (v[0]*v[2]*oc-v[1]*s); cm[9] = (v[2]*v[1]*oc+v[0]*s); cm[10] = (c+v[2]*v[2]*oc); cm[11]= cm[8]*x+cm[9]*y+cm[10]*z;
-		v = axes[2];
-                //cout << v.magnitude();
-                s = sin(v.magnitude()*3.141592654*2);
-                c = cos(v.magnitude()*3.141592654*2);
-                v.normalize();
-                oc = 1-c;
-                //cout << cm[0];
-                cm[0] = (c+v[0]*v[0]*oc)/w; cm[1] = (v[0]*v[1]*oc-v[2]*s)/w; cm[2] = (v[0]*v[2]*oc+v[1]*s)/w; cm[3] = cm[0]*x+cm[1]*y+cm[2]*z;
-                cm[4] = (v[0]*v[1]*oc+v[2]*s)/h; cm[5] = (c+v[1]*v[1]*oc)/h; cm[6] = (v[1]*v[2]*oc-v[0]*s)/h; cm[7] = cm[4]*x+cm[5]*y+cm[6]*z;
-                cm[8] = (v[0]*v[2]*oc-v[1]*s); cm[9] = (v[2]*v[1]*oc+v[0]*s); cm[10] = (c+v[2]*v[2]*oc); cm[11]= cm[8]*x+cm[9]*y+cm[10]*z;*/
-	//}
->>>>>>> 9c2b169e25c8ca74cacc84f421e667f130f533dc
+	cout << cam->roll[0] <<","<< cam->roll[1] << "," << cam->roll[2] << " " << cam->yaw[0] <<","<< cam->yaw[1] << "," << cam->yaw[2]<< " " << cam->pitch[0] <<","<< cam->pitch[1] << "," << cam->pitch[2] << "\n";
 }
 void planetmatrixupdate(Planet *planet, float *matrix) {
 	auto c = cos(planet->ori.magnitude()*3.141592654*2);
@@ -289,7 +271,7 @@ int main()
 	float matrixarray[3][16] = {	{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1},
 					{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1},
 					{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1}};
-
+	float identity[16] = {1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
 	int win_width = 0;
 	int win_height = 0;
 	SDL_GetWindowSize(window, &win_width, &win_height);
@@ -358,6 +340,8 @@ int main()
 			glUniformMatrix4fv(um2w,1,1,matrixarray[i]);
 			glUniform3f(ucolor,colors[color][0],colors[color][1],colors[color][2]);
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 6);
+			glUniformMatrix4fv(um2w, 1, 1, identity);
+			glDrawArrays(GL_LINES, 12, 6);
 		}
 
 		SDL_GL_SwapWindow(window);

@@ -21,12 +21,6 @@ public:
 		this->position[2] = z;
 	}
 	void rpitch(long double angle) {
-<<<<<<< HEAD
-		/* hack!!! */ //this->orientation[0] = std::fmod(this->orientation[0]+angle,2*3.1415926536);
-	}
-	void ryaw() {
-		//auto ori = this->orientation;
-=======
 		auto ori = this->pitch;
                 auto s = (angle+ori.magnitude())/ori.magnitude();
                 this->pitch = ori*s;
@@ -36,7 +30,6 @@ public:
 		auto ori = this->yaw;
 		auto s = (angle+ori.magnitude())/ori.magnitude();
                 this->yaw = ori*s;
->>>>>>> 9c2b169e25c8ca74cacc84f421e667f130f533dc
 		//auto theta = ori.magnitude()*2*3.1415926536;
 	}
 	void rroll(long double angle) {
